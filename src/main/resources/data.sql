@@ -1,0 +1,4 @@
+INSERT INTO shortened_url_statuses (id, status_name, created_at, modified_at)
+VALUES (1, 'ACTIVE', '2025-09-26T01:53:44.456832Z', '2025-09-26T01:53:44.456832Z'),
+       (2, 'EXPIRED', '2025-09-26T01:53:44.456832Z', '2025-09-26T01:53:44.456832Z'),
+       (3, 'DELETED', '2025-09-26T01:53:44.456832Z', '2025-09-26T01:53:44.456832Z');
