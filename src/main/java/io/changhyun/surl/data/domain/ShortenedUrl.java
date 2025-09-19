@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 @Entity
+@Table(name = "shortened_url")
 @Getter
 public class ShortenedUrl {
 
@@ -39,7 +40,8 @@ public class ShortenedUrl {
 
     }
 
-    public ShortenedUrl(String originalUrl, String code, int days) {
+    public ShortenedUrl(ShortenedUrlStatus status, String originalUrl, String code, int days) {
+        this.status = status;
         this.originalUrl = originalUrl;
         this.code = code;
 

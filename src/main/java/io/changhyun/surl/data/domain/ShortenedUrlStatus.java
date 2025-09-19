@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 
 @Entity
+@Table(name = "shortened_url_statuses")
 @Getter
 public class ShortenedUrlStatus extends BaseEntity {
 
