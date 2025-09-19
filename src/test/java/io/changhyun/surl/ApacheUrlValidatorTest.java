@@ -1,11 +1,10 @@
 package io.changhyun.surl;
 
 import org.apache.commons.validator.routines.UrlValidator;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Apache Url Validator 테스트")
 public class ApacheUrlValidatorTest {

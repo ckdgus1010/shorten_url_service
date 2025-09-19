@@ -53,7 +53,7 @@ public class UrlShorteningService {
                 .findById(DEFAULT_STATUS_ID)
                 .orElseThrow(() -> new UrlStatusNotFoundException("URL을 단축시킬 수 없습니다. 잠시 후 다시 시도해 주세요."));
 
-        // 키 값 생성
+        // 무작위 코드 값 생성
         String code = randomCodeGenerator.generateRandomCode();
         ShortenedUrl newEntity = new ShortenedUrl(status, normalizedUrl, code, DEFAULT_URL_EXPIRATION_PERIOD);
 
@@ -65,13 +65,6 @@ public class UrlShorteningService {
         } catch (DataIntegrityViolationException exception) {
             throw new UrlShorteningFailureException("URL을 단축시킬 수 없습니다. 잠시 후 다시 시도해 주세요.");
         }
-    }
-
-    public String getOriginalUrl(String code) {
-        return shortenedUrlRepository
-                .findByCode(code)
-                .orElseThrow(() -> new UrlNotFoundException("url을 찾을 수 없습니다."))
-                .getOriginalUrl();
     }
 
     private String normalize(String url) {
