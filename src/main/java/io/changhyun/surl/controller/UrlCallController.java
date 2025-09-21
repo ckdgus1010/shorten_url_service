@@ -21,8 +21,14 @@ public class UrlCallController {
 
     private final UrlReadService urlReadService;
 
+    private static final String FAVICON = "favicon.ico";
+
     @GetMapping("/{code}")
     public ResponseEntity<?> redirectToOriginalUrl(@PathVariable String code) {
+        if (code.equals(FAVICON)) {
+            return null;
+        }
+
         String originalUrl = urlReadService.findOriginalUrl(code);
 
         try {

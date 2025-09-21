@@ -20,7 +20,7 @@ public class ShortenedUrl {
     @JoinColumn(name = "status_id", nullable = false)
     private ShortenedUrlStatus status;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "text", nullable = false)
     private String originalUrl;
 
     @Setter
