@@ -63,6 +63,7 @@ public class UrlShorteningService {
 
             return new UrlShorteningResponse(shortenedUrl, saved.getExpiredAt());
         } catch (DataIntegrityViolationException exception) {
+            log.error(exception.getMessage());
             throw new UrlShorteningFailureException("URL을 단축시킬 수 없습니다. 잠시 후 다시 시도해 주세요.");
         }
     }
