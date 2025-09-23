@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 @Entity
-@Table(name = "shortened_url")
+@Table(name = "shortened_urls")
 @Getter
 public class ShortenedUrl {
 
