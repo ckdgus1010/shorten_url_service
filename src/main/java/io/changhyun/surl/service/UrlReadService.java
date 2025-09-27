@@ -7,6 +7,7 @@ import io.changhyun.surl.repository.ShortenedUrlRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ public class UrlReadService {
 
     private final ShortenedUrlRepository shortenedUrlRepository;
 
+    @Transactional(readOnly = true)
     public String findOriginalUrl(String code) {
         Optional<ShortenedUrl> optional = shortenedUrlRepository.findByCode(code);
 
