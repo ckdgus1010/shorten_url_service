@@ -102,7 +102,7 @@ jobs:
       - name: Deploy to EC2 via SSM
         run: |
           set -e
-          echo "Deploying to ${AWS_EC2_INSTANCE_ID}
+          echo "Deploying to ${AWS_EC2_INSTANCE_ID}"
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --instance-ids ${AWS_EC2_INSTANCE_ID} \
