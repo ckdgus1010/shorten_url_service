@@ -1,3 +1,5 @@
 spring:
   application:
     name: surl
+  profiles:
+    active: dev

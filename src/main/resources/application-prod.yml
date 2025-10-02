@@ -1,0 +1,24 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 101
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  tomcat:
+    threads:
+      max: 100
+  port: 8080
+
+template:
+  domain: ${SERVICE_DOMAIN}  # 단축 url 반환 시 적용될 도메인

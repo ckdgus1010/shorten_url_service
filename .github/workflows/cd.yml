@@ -1,0 +1,122 @@
+name: CD
+on:
+  # CI workflow가 성공하면 자동 배포
+  workflow_run:
+    workflows:
+      - "CI (Java Gradle)"  # ci.yml의 name과 정확히 일치해야 함
+    types:
+      - completed
+  # 수동 배포도 가능하도록 설정
+  workflow_dispatch:
+    { }
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_IAM_ROLE_ARN: ${{ secrets.AWS_IAM_ROLE_ARN }}
+  AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}           # S3 버킷 이름
+  AWS_S3_KEY_PREFIX: ${{ secrets.AWS_S3_KEY_PREFIX }}   # 버킷 내 저장할 경로(prefix)
+  AWS_EC2_INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }} # EC2 인스턴스 ID
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+  APP_DIR: ${{ secrets.APP_DIR }} # S3 -> EC2 인스턴스로 복사된 파일 경로
+  ARTIFACT_NAME: build-artifacts  # CI 에서 올린 artifact 이름
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # main 브랜치의 push 이벤트 + CI 성공일 때만 진행
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+
+    steps:
+      - name: (Guard) Only run when CI succeeded
+        if: github.event_name == 'workflow_run'
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "Upstream CI is not successful. Skipping CD."
+            exit 78
+          fi
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # --- Artifact 다운로드 ---
+      # 1) workflow_run 으로 트리거된 경우: 해당 run-id 에서 artifact 직접 다운로드
+      - name: Download artifact from CI (workflow_run)
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./artifacts
+          run-id: '${{ github.event.workflow_run.id }}' # 핵심: 해당 CI 실행의 Artifact
+          github-token: ${{ github.token }}
+
+      # 2) 수동 실행인 경우: 입력한 ci_run_id 에서 다운로드 (미지정시 fail)
+      - name: Download artifact from CI (manual with ci_run_id)
+        if: github.event_name == 'workflow_dispatch' && inputs.ci_run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./artifacts
+          run-id: ${{ inputs.ci_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Fail if no artifact was downloaded (manual without ci_run_id)
+        if: github.event_name == 'workflow_dispatch' && inputs.ci_run_id == ''
+        run: |
+          echo "You triggered CD manually. Please provide 'ci_run_id' input to fetch the CI artifact."
+          exit 1
+
+      - name: Locate JAR
+        run: |
+          set -e
+          ls -R ./artifacts
+          # 멀티모듈 대비: 가장 최근 수정된 JAR 하나 선택
+          JAR_PATH=$(find ./artifacts -type f -name "*.jar" -printf "%T@ %p\n" | sort -n | tail -1 | awk '{print $2}')
+          if [ -z "$JAR_PATH" ]; then
+            echo "No JAR found in artifacts."
+            exit 1
+          fi
+          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_ENV
+
+      - name: Upload JAR to S3 (versioned + latest)
+        run: |
+          set -e
+          COMMIT_SHA=${{ github.sha }}
+          aws s3 cp "$JAR_PATH" "s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX}}/${{env.SERVICE_NAME}}-${COMMIT_SHA}.jar"
+          aws s3 cp "$JAR_PATH" "s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX}}/${{env.SERVICE_NAME}}-latest.jar"
+
+      - name: Deploy to EC2 via SSM
+        run: |
+          set -e
+          echo "Deploying to ${AWS_EC2_INSTANCE_ID}
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids ${AWS_EC2_INSTANCE_ID} \
+            --comment "Deploy ${SERVICE_NAME} latest" \
+            --parameters commands="[
+              \"set -e\",
+              \"echo 'Downloading JAR from S3'\",
+              \"aws s3 cp s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX}}/${{env.SERVICE_NAME}}-latest.jar ${APP_DIR}/app.jar\",
+              \"sudo systemctl restart ${SERVICE_NAME}\",
+              \"sleep 2\",
+              \"sudo systemctl is-active ${SERVICE_NAME} || (journalctl -u ${SERVICE_NAME} -n 200 --no-pager; exit 1)\",
+              \"echo 'Deploy completed'\"
+            ]" \
+            --output-s3-bucket-name "${AWS_S3_BUCKET}" \
+            --output-s3-key-prefix "ssm-logs/${AWS_EC2_INSTANCE_ID}" \
+            > /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json
+          echo "CommandId: $(jq -r '.Command.CommandId' /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json)"
