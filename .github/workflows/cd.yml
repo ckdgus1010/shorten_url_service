@@ -126,7 +126,7 @@ jobs:
             --instance-ids ${{ env.AWS_EC2_INSTANCE_ID }} \
             --comment "Deploy ${{ env.SERVICE_NAME }} latest" \
             --parameters file:///tmp/ssm-commands.json \
-            --output-s3-bucket-name "${{ env.AWS_S3_BUCKET} }" \
+            --output-s3-bucket-name "${{ env.AWS_S3_BUCKET }}" \
             --output-s3-key-prefix "ssm-logs/${{ env.AWS_EC2_INSTANCE_ID }}" \
             > /tmp/ssm-${{ env.AWS_EC2_INSTANCE_ID }}.json
           echo "CommandId: $(jq -r '.Command.CommandId' /tmp/ssm-${{ env.AWS_EC2_INSTANCE_ID }}.json)"
