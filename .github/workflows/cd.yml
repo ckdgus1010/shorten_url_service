@@ -118,5 +118,5 @@ jobs:
             ]' \
             --output-s3-bucket-name "${AWS_S3_BUCKET}" \
             --output-s3-key-prefix "ssm-logs/${AWS_EC2_INSTANCE_ID}" \
-            > /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json
+          > /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json
           echo "CommandId: $(jq -r '.Command.CommandId' /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json)"
