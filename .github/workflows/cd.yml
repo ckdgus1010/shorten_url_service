@@ -107,15 +107,15 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --instance-ids ${AWS_EC2_INSTANCE_ID} \
             --comment "Deploy ${SERVICE_NAME} latest" \
-            --parameters commands="[
-              \"set -e\",
-              \"echo 'Downloading JAR from S3'\",
-              \"aws s3 cp s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX}}/${{env.SERVICE_NAME}}-latest.jar ${APP_DIR}/app.jar\",
-              \"sudo systemctl restart ${SERVICE_NAME}\",
-              \"sleep 2\",
-              \"sudo systemctl is-active ${SERVICE_NAME} || (journalctl -u ${SERVICE_NAME} -n 200 --no-pager; exit 1)\",
-              \"echo 'Deploy completed'\"
-            ]" \
+            --parameters 'commands=[
+              "set -e",
+              "echo 'Downloading JAR from S3'",
+              "aws s3 cp s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX}}/${{env.SERVICE_NAME}}-latest.jar ${APP_DIR}/app.jar",
+              "sudo systemctl restart ${SERVICE_NAME}",
+              "sleep 2",
+              "sudo systemctl is-active ${SERVICE_NAME} || (journalctl -u ${SERVICE_NAME} -n 200 --no-pager; exit 1)",
+              "echo 'Deploy completed'"
+            ]' \
             --output-s3-bucket-name "${AWS_S3_BUCKET}" \
             --output-s3-key-prefix "ssm-logs/${AWS_EC2_INSTANCE_ID}" \
             > /tmp/ssm-${AWS_EC2_INSTANCE_ID}.json
