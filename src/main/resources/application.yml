@@ -2,4 +2,9 @@ spring:
   application:
     name: surl
   profiles:
-    active: dev
+    active: prod-blue
+    group:
+      prod-blue:
+        - prod
+      prod-green:
+        - prod
