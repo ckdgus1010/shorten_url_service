@@ -114,7 +114,7 @@ jobs:
               "echo 'Downloading JAR from S3'",
               "aws s3 cp s3://${{ env.AWS_S3_BUCKET }}/${{ env.AWS_S3_KEY_PREFIX }}/${{ env.SERVICE_NAME }}-latest.jar ${{ env.APP_DIR }}/app.jar",
               "echo 'Running deploy.sh (Blue/Green switch)'",
-              "bash ${{ env.DEPLOY_SCRIPT }}
+              "bash ${{ env.DEPLOY_SCRIPT }},
               "echo 'Deploy completed'"
             ]
           }
